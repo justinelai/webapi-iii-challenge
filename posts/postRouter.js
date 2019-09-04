@@ -4,8 +4,6 @@ const router = express.Router()
 
 router.use(express.json())
 
-const Posts = require('./postDb.js')
-
 router.get('/', (req, res) => {
  
 });

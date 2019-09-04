@@ -23,13 +23,11 @@ router.post('/', validateUser, (req, res) => {
 // ========================= POST /users/:id/posts =========================
 
 router.post('/:id/posts', [validateUserId, validatePost], (req, res) => {
-    let newPost = {"text":req.body.text, "postedBy":req.name }
-    Users.getUserPosts(req.params.id)
+    const newPost = req.body
+    newPost.user_id = req.params.id
+    Posts.insert(newPost)
     .then(result => {
-        Posts.insert(newPost)
-            .then(final => { 
-                console.log(final) 
-            })
+        res.status(200).json(result)
     })
     .catch(err => {
         res.status(500).json({ error: "There was an error while saving the post to the database" })
@@ -105,6 +103,7 @@ function validateUserId(req, res, next) {
         .then(u => {
             if (u) {
                 req.user = req.params.id
+                console.log("validateUserId passed")
                 next();
             } else {res.status(400).json({ message: "invalid user id" })}
 
@@ -121,6 +120,7 @@ function validateUser(req, res, next) {
         res.status(400).json({ message: "missing user data"  })
     }
     else { 
+        console.log("validateUser passed")
         next()
     }}
 
@@ -131,6 +131,7 @@ function validatePost(req, res, next) {
         res.status(400).json({ message: "missing post data" })
     }
     else { 
+        console.log("validatePost passed")
         next()
     }
 };
