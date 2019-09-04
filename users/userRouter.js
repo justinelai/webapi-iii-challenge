@@ -6,7 +6,7 @@ router.use(express.json())
 
 const Users = require('./userDb.js')
 
-// ========================= POST /users ========================= working!
+// ========================= POST /users ========================= DONE!
 router.post('/', validateUser, (req, res) => {  
     Users.insert(req.body)
     .then(result => {
@@ -35,7 +35,7 @@ router.post('/:id/posts', (req, res) => {
     }
 });
 
-// ========================= GET /users ========================= working!
+// ========================= GET /users ========================= DONE!
 
 router.get('/', (req, res) => {
     Users.get()
@@ -47,7 +47,7 @@ router.get('/', (req, res) => {
     })
 })
 
-// ========================= GET /users/:id ========================= working! REFACTORED!
+// ========================= GET /users/:id ========================= DONE!
 router.get('/:id', validateUserId, (req, res) => {
     Users.getById(req.user)
         .then(u => {
@@ -58,7 +58,7 @@ router.get('/:id', validateUserId, (req, res) => {
     })
 })
 
-// ========================= GET /users/:id/posts ========================= working!
+// ========================= GET /users/:id/posts ========================= DONE unless it needs a posts refactor
 
 router.get('/:id/posts', validateUserId, (req, res) => {
     Users.getUserPosts(req.params.id)
@@ -70,28 +70,27 @@ router.get('/:id/posts', validateUserId, (req, res) => {
     })
 });
 
-// ========================= DELETE /users/:id ========================= working!
+// ========================= DELETE /users/:id ========================= DONE
 
 router.delete('/:id', validateUserId, (req, res) => {
     const id = req.params.id
     Users.remove(id)
     .then(user => {
-        res.status(200).json(user)
+        res.status(200).json({ error: "Delete successful!" })
     })
     .catch(err => {
         res.status(500).json({ error: "The user could not be removed" })
     })
 });
 
-// ========================= PUT /users/:id ========================= 
+// ========================= PUT /users/:id ========================= DONE!
 
 router.put('/:id', [validateUserId, validateUser], (req, res) => {
     Users.update(req.user, req.body)
     .then(result => {
-            Users.getById(result.id)
+            Users.getById(req.user)
             .then(u => res.status(200).json(u))
-            .catch(err => res.status(500).json({ error: "There was an error while saving the user to the database" }))
-    })
+            })
     .catch(err => {
         err.code ===  "SQLITE_CONSTRAINT" ? res.status(400).json({ errorMessage: "Name must be unique." })
         : res.status(500).json({ error: "There was an error while saving the user to the database" })
