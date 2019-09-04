@@ -1,10 +1,12 @@
 const express = require('express')
-
 const router = express.Router()
-
 router.use(express.json())
 
+
 const Users = require('./userDb.js')
+const Posts = require('../posts/postDb.js')
+
+
 
 // ========================= POST /users ========================= DONE!
 router.post('/', validateUser, (req, res) => {  
@@ -20,19 +22,18 @@ router.post('/', validateUser, (req, res) => {
 
 // ========================= POST /users/:id/posts =========================
 
-router.post('/:id/posts', (req, res) => {
-    const {text} = req.body;
-    const newComment = {...req.body, "user_id": req.params.id }
-    if (!text) {
-        res.status(400).json({ errorMessage: "Please provide text for the post." })
-    } else {
-        Users.insertComment(newComment)
-           /*  .then(inserted => 
-                {
-                    Posts.findCommentById(inserted.id).then(fullComment => res.status(201).json((fullComment)))
-                })
-            .catch(err => res.status(500).json({ error: "There was an error while saving the post to the database" })) */
-    }
+router.post('/:id/posts', [validateUserId, validatePost], (req, res) => {
+    let newPost = {"text":req.body.text, "postedBy":req.name }
+    Users.getUserPosts(req.params.id)
+    .then(result => {
+        Posts.insert(newPost)
+            .then(final => { 
+                console.log(final) 
+            })
+    })
+    .catch(err => {
+        res.status(500).json({ error: "There was an error while saving the post to the database" })
+    })
 });
 
 // ========================= GET /users ========================= DONE!
@@ -58,7 +59,7 @@ router.get('/:id', validateUserId, (req, res) => {
     })
 })
 
-// ========================= GET /users/:id/posts ========================= DONE unless it needs a posts refactor
+// ========================= GET /users/:id/posts ========================= DONE unless it needs a posts refactor (stretch)
 
 router.get('/:id/posts', validateUserId, (req, res) => {
     Users.getUserPosts(req.params.id)
@@ -124,7 +125,14 @@ function validateUser(req, res, next) {
     }}
 
 function validatePost(req, res, next) {
-
+    if (!req.body.text) {
+        res.status(400).json({ message: "missing required text field" })
+    } else if (!req.body){
+        res.status(400).json({ message: "missing post data" })
+    }
+    else { 
+        next()
+    }
 };
 
 module.exports = router;
