@@ -7,12 +7,8 @@ router.use(express.json())
 const Users = require('./userDb.js')
 
 // ========================= POST /users ========================= working!
-router.post('/', (req, res) => {
-    const {name} = req.body;
-    if (!name) {
-        res.status(400).json({ errorMessage: "Please provide a name." })
-    } else { 
-        Users.insert(req.body)
+router.post('/', validateUser, (req, res) => {  
+    Users.insert(req.body)
     .then(result => {
         res.status(201).json(result)
     })
@@ -20,7 +16,6 @@ router.post('/', (req, res) => {
         err.code ===  "SQLITE_CONSTRAINT" ? res.status(400).json({ errorMessage: "Name must be unique." })
         : res.status(500).json({ error: "There was an error while saving the user to the database" })
     })
-}
 });
 
 // ========================= POST /users/:id/posts =========================
@@ -54,7 +49,7 @@ router.get('/', (req, res) => {
 
 // ========================= GET /users/:id ========================= working! REFACTORED!
 router.get('/:id', validateUserId, (req, res) => {
-    Users.getById(req.params.id)
+    Users.getById(req.user)
         .then(u => {
             res.status(200).json(u)
         })
@@ -90,15 +85,10 @@ router.delete('/:id', validateUserId, (req, res) => {
 
 // ========================= PUT /users/:id ========================= 
 
-router.put('/:id', validateUserId, (req, res) => {
-    const {name} = req.body;
-    const {id} = req.params;
-    if (!name) {
-        res.status(400).json({ errorMessage: "Please provide name for the user." })
-    } else {
-        Users.update(id, req.body)
+router.put('/:id', [validateUserId, validateUser], (req, res) => {
+    Users.update(req.user, req.body)
     .then(result => {
-            Users.getById(id)
+            Users.getById(result.id)
             .then(u => res.status(200).json(u))
             .catch(err => res.status(500).json({ error: "There was an error while saving the user to the database" }))
     })
@@ -106,16 +96,18 @@ router.put('/:id', validateUserId, (req, res) => {
         err.code ===  "SQLITE_CONSTRAINT" ? res.status(400).json({ errorMessage: "Name must be unique." })
         : res.status(500).json({ error: "There was an error while saving the user to the database" })
     })
-    }
-    
-});
+    });
 
-//custom middleware
+// ========================= CUSTOM MIDDLEWARE ========================= 
 
 function validateUserId(req, res, next) {
     Users.getById(req.params.id)
         .then(u => {
-            u ? next() : res.status(404).json({ message: "The user with the specified ID does not exist." })
+            if (u) {
+                req.user = req.params.id
+                next();
+            } else {res.status(400).json({ message: "invalid user id" })}
+
         })
         .catch(err => {
             res.status(500).json({ error: "The user information could not be retrieved." })
@@ -123,8 +115,14 @@ function validateUserId(req, res, next) {
 };
 
 function validateUser(req, res, next) {
-
-};
+    if (!req.body.name) {
+        res.status(400).json({ message: "missing required name field"  })
+    } else if (!req.body){
+        res.status(400).json({ message: "missing user data"  })
+    }
+    else { 
+        next()
+    }}
 
 function validatePost(req, res, next) {
 
