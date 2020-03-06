@@ -1,9 +1,11 @@
-const express = 'express';
+const express = require('express')
 
-const router = express.Router();
+const router = express.Router()
+
+router.use(express.json())
 
 router.get('/', (req, res) => {
-
+ 
 });
 
 router.get('/:id', (req, res) => {
